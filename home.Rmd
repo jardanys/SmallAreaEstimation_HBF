@@ -1,0 +1,129 @@
+---
+title: "Estimación Áreas Pequeñas por Municipios - Puntaje Matemáticas PRESABER"
+output: html_document
+---
+
+##### Realizado por:
+
+- **Nestor Jardany Serrano Rojas**, [GitHub](https://github.com/jardanys/SmallAreaEstimation_1)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+info.date<-format(Sys.time(), "%Y-%m")
+fileConn<-file("footer2.html")
+msj<-paste("<p>", info.date, "Realizado por: Nestor Jardany Serrano Rojas</p>")
+writeLines(c(msj,"<p>Copyright &copy; All rights reserved.</p>"),fileConn)
+close(fileConn)
+```
+
+```{r libraries, include=FALSE}
+library(survey)
+library(sae)
+library(TeachingSampling)
+library(dplyr)
+library(nlme)
+library(kableExtra)
+library(knitr)
+options(survey.lonely.psu="adjust")
+load(".Rdata")
+```
+
+<br>
+
+## INTRODUCCIÓN
+
+El presente documento tiene como objetivo realizar la mejor estimación por áreas pequeñas para el Puntaje de Matemáticas por municipios (Dominio) utilizando el estimador [Battese-Harter-Fuller]() (BHF). Se tiene en cuenta cuatro tipos de variables auxiliares para el modelo:
+
+- x1: Una materia que no sea Matemáticas. (Lectura, Sociales, Ciencias o Ingles)
+- x2: Estrato Energia.
+- x3: Una variable del Colegio. (Calendario, Naturaleza, Jornada, Evaluados)
+- x4: Otra Variable. (Genero, Personas en Hogar, Habitaciones, Pisos, Internet, Computador, Auto, Desempeño Ingles)
+
+Para esto se utilizó una muestra realizada en el archivo [DiseñoMuestral.R](), es una muestra en tres etapas con un marco muestral descrito en el siguiente [Diagrama]().  
+
+Se realizaron [128]() modelos, la combinación de las cuatro variables con sus posibles candidatas. Se muestra la estimación de BHF para los valores observados y para los no observados se utilizan los betas para los dominios que no salieron en la muestra. La muestra tiene 28 municipios y se estiman los 1070 municipios restantes. Para determinar el mejor modelo se escoge el de menor media de los coeficientes de variación y la menor desviación estándar. 
+
+Los resultados muestran un modelo con las variables de ciencias naturales, estrato, naturaleza y desempeño en ingles. Con una media del coeficiente de variación de todos los municipios de 1.10 y una desviación estándar de 0.09.
+
+<br>
+
+## 1. Población y Muestra
+
+La población es de 535.254 estudiantes de diferentes colegios y municipios de Colombia. La muestra tiene 5.556 estudiantes de 28 municipios. 
+
+```{r Muestra, include=TRUE}
+est <- readRDS("estudiantes.rds")
+muestra3etapas <- readRDS("muestra3etapas.rds")
+```
+
+<br>
+
+## 2. Transformación y preparación de datos
+
+Para realizar la estimación los nulos de la población en las variables categoricas se imputan a la modal y en las númericas a la media. Luego para las categoricas se crean variables dummies y se agrupa por municipio, el promedio de todas las variables y se obtienen los tamaños. También se fija una semilla en "12345".
+
+```{r tamanos, include=TRUE}
+set.seed(12345)
+Tamanos <- Infoaux[,c("CODIGOMUNICIPIO", "N_d")]
+kable(head(Tamanos), "html") %>%
+  kable_styling("striped", full_width = F, position = "center") %>%
+  add_footnote(c("Primeros 5 registros"), notation = "number")
+```
+<br>
+
+## 3. Estimación Battese-Harter-Fuller (BHF)
+
+Para realizar la estimación se programo una función llamada [BHF_Function]() con parámetos x1, x3 y x4 (la variable x2 es estrato energia); en el archivo [example_cod.R]() se encuentra el desarrollo de la función. luego se itera todas las posibles combinaciones de  las opciones de cada vairable.
+
+```{r HBF, eval=FALSE, include=TRUE}
+i <- 1
+for (x1 in X1){
+  for (x3 in X3){
+    for (x4 in X4){
+      BHF_mean_cve <- BHF_Function(x1, x3, x4)
+      table_cves[i,] <- BHF_mean_cve
+      i <- i + 1
+    }
+  }
+}
+```
+<br>
+
+## 4. Resultados
+
+Luego de realizar todos los posibles modelos [128]() en total, se creo una tabla con los resultados, la media de todos los municipios y las variables utilizadas. A continuación se muestran los primeros 15 registros.
+
+```{r HBF_table, echo=FALSE}
+kable(head(table_cves, 15), "html") %>%
+  kable_styling("striped", full_width = F, position = "center") %>%
+  add_footnote(c("Primeros 15 registros"), notation = "number")
+```
+
+Las medias de los coeficientes de variación tienen la siguiente distribución
+
+```{r HBF_table_1, echo=FALSE}
+summary(as.numeric(table_cves$Mean_cves))
+hist(as.numeric(table_cves$Mean_cves), xlab = "mean cve's", ylab = "Frecuencia", main = "Histograma de la media de los cve")
+plot(table_cves$Mean_cves, xlab = "Modele", ylab = "cve mean", main = "cve mean vs modelo")
+```
+
+El modelo con menor media de coeficiente de variación y menor desviación estándar es:
+
+```{r HBF_table_2, echo=FALSE}
+kable(table_cves[80,], "html") %>%
+  kable_styling("striped", full_width = F, position = "center") %>%
+  add_footnote(c("Mejor Modelo"), notation = "number")
+```
+<br>
+
+## 5. Conclusiones
+
+El modelo que mejor describe el puntaje de matemáticas por medio de estimación HBF tiene las siguientes variables auxiliares:
+
+- Puntaje de ciencias naturales.
+- Estrato vivienda en energia.
+- Naturaleza del colegio (Oficial y No Oficial)
+- Desempeño en ingles (A-, A1, A2, B1, B+)
+
+La media de los coeficientes de variación de todos los municipios es [1.10]() y la desviación estándar de esta es [0.09](), lo que permite obtener unos resultados muy confiables para estimar el puntaje de matemáticas en todos los municipios.
+
