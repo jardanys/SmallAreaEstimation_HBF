@@ -5,7 +5,7 @@ output: html_document
 
 ##### Realizado por:
 
-- **Nestor Jardany Serrano Rojas**, [GitHub](https://github.com/jardanys/SmallAreaEstimation_1)
+- **Nestor Jardany Serrano Rojas**, [GitHub](https://github.com/jardanys/SmallAreaEstimation_HBF) (En este repositorio se encuentran todos los archivos utilizados en el estudio)
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(message = FALSE, warning = FALSE)
@@ -39,11 +39,11 @@ El presente documento tiene como objetivo realizar la mejor estimación por áre
 - x3: Una variable del Colegio. (Calendario, Naturaleza, Jornada, Evaluados)
 - x4: Otra Variable. (Genero, Personas en Hogar, Habitaciones, Pisos, Internet, Computador, Auto, Desempeño Ingles)
 
-Para esto se utilizó una muestra realizada en el archivo [DiseñoMuestral.R](), es una muestra en tres etapas con un marco muestral descrito en el siguiente [Diagrama]().  
+Para esto se utilizó una muestra realizada en el archivo [DiseñoMuestral.R](https://github.com/jardanys/SmallAreaEstimation_HBF/blob/master/Dise%C3%B1oMuestral.R), es una muestra en tres etapas con un marco muestral descrito en el siguiente [Diagrama](https://github.com/jardanys/SmallAreaEstimation_HBF/blob/master/diagrama.png).  
 
-Se realizaron [128]() modelos, la combinación de las cuatro variables con sus posibles candidatas. Se muestra la estimación de BHF para los valores observados y para los no observados se utilizan los betas para los dominios que no salieron en la muestra. La muestra tiene 28 municipios y se estiman los 1070 municipios restantes. Para determinar el mejor modelo se escoge el de menor media de los coeficientes de variación y la menor desviación estándar. 
+Se realizaron [128]() modelos, la combinación de las cuatro variables con sus posibles candidatas. En este estudio se programa una función para relizar la combinación de todas las posibles variables (En el siguiente archivo [example_cod.R](https://github.com/jardanys/SmallAreaEstimation_HBF/blob/master/example_cod.R) se encuentra el detalle de la programación). Se muestra la estimación de BHF para los valores observados y para los no observados se utilizan los betas para los dominios que no salieron en la muestra. La muestra tiene 28 municipios y se estiman los 1070 municipios restantes con sus coeficeintes de variación. Para determinar el mejor modelo se escoge el modelo de menor media de los coeficientes de variación y la menor desviación estándar de todos los municipios. 
 
-Los resultados muestran un modelo con las variables de ciencias naturales, estrato, naturaleza y desempeño en ingles. Con una media del coeficiente de variación de todos los municipios de 1.10 y una desviación estándar de 0.09.
+Los resultados muestran un modelo con las variables de ciencias naturales, estrato, naturaleza y desempeño en ingles. Con una media del coeficiente de variación de todos los municipios de [1.10]() y una desviación estándar de [0.09]().
 
 <br>
 
@@ -60,7 +60,7 @@ muestra3etapas <- readRDS("muestra3etapas.rds")
 
 ## 2. Transformación y preparación de datos
 
-Para realizar la estimación los nulos de la población en las variables categoricas se imputan a la modal y en las númericas a la media. Luego para las categoricas se crean variables dummies y se agrupa por municipio, el promedio de todas las variables y se obtienen los tamaños. También se fija una semilla en "12345".
+Para realizar la estimación los valores nulos de la población se imputan. En las variables categoricas se imputan a la modal y en las númericas a la media. Luego para las categoricas se crean variables dummies y se agrupa por municipio, se obtiene el promedio de todas las variables y  los tamaños. También se fija una semilla en "12345". Como se muestra a continuación.
 
 ```{r tamanos, include=TRUE}
 set.seed(12345)
@@ -73,7 +73,7 @@ kable(head(Tamanos), "html") %>%
 
 ## 3. Estimación Battese-Harter-Fuller (BHF)
 
-Para realizar la estimación se programo una función llamada [BHF_Function]() con parámetos x1, x3 y x4 (la variable x2 es estrato energia); en el archivo [example_cod.R]() se encuentra el desarrollo de la función. luego se itera todas las posibles combinaciones de  las opciones de cada vairable.
+Para realizar la estimación se programo una función llamada [BHF_Function]() con parámetos x1, x3 y x4 (la variable x2 es estrato energia); en el archivo [example_cod.R](https://github.com/jardanys/SmallAreaEstimation_HBF/blob/master/example_cod.R) se encuentra el desarrollo de la función con la estimación de todos los municipios para todas las variables. Luego se itera todas las posibles combinaciones de  las opciones de cada vairable, como se muestra a continuación.
 
 ```{r HBF, eval=FALSE, include=TRUE}
 i <- 1
@@ -91,7 +91,7 @@ for (x1 in X1){
 
 ## 4. Resultados
 
-Luego de realizar todos los posibles modelos [128]() en total, se creo una tabla con los resultados, la media de todos los municipios y las variables utilizadas. A continuación se muestran los primeros 15 registros.
+Luego de realizar todos los posibles modelos [128]() en total, se creo una tabla con los resultados. La media de los coeficientes de variación y la desviación estándar de todos los modelos y las variables utilizadas. A continuación se muestran los primeros 15 registros.
 
 ```{r HBF_table, echo=FALSE}
 kable(head(table_cves, 15), "html") %>%
@@ -99,7 +99,7 @@ kable(head(table_cves, 15), "html") %>%
   add_footnote(c("Primeros 15 registros"), notation = "number")
 ```
 
-Las medias de los coeficientes de variación tienen la siguiente distribución
+Las medias de los coeficientes de variación tienen la siguiente distribución y se observa que el modelo número 80 es el de menor media en los cve.
 
 ```{r HBF_table_1, echo=FALSE}
 summary(as.numeric(table_cves$Mean_cves))
